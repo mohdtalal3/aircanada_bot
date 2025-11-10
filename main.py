@@ -158,7 +158,8 @@ def fill_form(sb, data):
 
     # Submit form
     sb.js_click('button[data-analytics-val*="create my account"]', scroll=True,timeout=15)
-
+    
+    input("Press Enter to continue after submission...")
     time.sleep(5)
     try:
         number_text = sb.get_text("span.aeroplan-number")
