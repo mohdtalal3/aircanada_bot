@@ -60,8 +60,8 @@ def save_processed_entry(processed_file, row_data, aeroplan_number=None):
 
 
 # Fixed rotating proxy - no need to read from CSV
-#ROTATING_PROXY = "e955120e5c61b9eb64e9__cr.ca:27e87286655e11fe@gw.dataimpulse.com:823"
-ROTATING_PROXY = "LV23106126-IqS4nHKett-33:3a2bcxb537@174.138.175.186:7383"
+ROTATING_PROXY = "e955120e5c61b9eb64e9__cr.us:27e87286655e11fe@gw.dataimpulse.com:10000"
+#ROTATING_PROXY = "LV23106126-IqS4nHKett-33:3a2bcxb537@174.138.175.186:7383"
 
 def fill_form(sb, data):
     """Fill the form with data from CSV row"""
