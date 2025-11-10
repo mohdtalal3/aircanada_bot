@@ -5,7 +5,7 @@ import os
 from datetime import datetime
 import re
 import random
-
+extension_dir = os.path.join(os.getcwd(), 'extension')
 def read_csv(file_path):
     """Read CSV file and return list of dictionaries"""
     data_list = []
@@ -218,7 +218,7 @@ def main():
         try:
             # Initialize browser with rotating proxy
             aeroplan_number = None
-            with SB(uc=True, proxy=proxy) as sb:
+            with SB(uc=True, proxy=proxy, extension_dir=extension_dir) as sb:
                 aeroplan_number = fill_form(sb, data)
             
             # Save to processed CSV with Aeroplan number
