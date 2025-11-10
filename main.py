@@ -4,6 +4,7 @@ import time
 import os
 from datetime import datetime
 import re
+import random
 
 def read_csv(file_path):
     """Read CSV file and return list of dictionaries"""
@@ -60,8 +61,14 @@ def save_processed_entry(processed_file, row_data, aeroplan_number=None):
 
 
 # Fixed rotating proxy - no need to read from CSV
-ROTATING_PROXY = "e955120e5c61b9eb64e9__cr.us:27e87286655e11fe@gw.dataimpulse.com:10000"
+# Port range: 10000 to 20000 (will be randomized for each account)
+ROTATING_PROXY_BASE = "e955120e5c61b9eb64e9__cr.us:27e87286655e11fe@gw.dataimpulse.com"
 #ROTATING_PROXY = "LV23106126-IqS4nHKett-33:3a2bcxb537@174.138.175.186:7383"
+
+def get_random_proxy():
+    """Generate proxy with random port between 10000 and 20000"""
+    random_port = random.randint(10000, 20000)
+    return f"{ROTATING_PROXY_BASE}:{random_port}"
 
 def fill_form(sb, data):
     """Fill the form with data from CSV row"""
@@ -204,13 +211,14 @@ def main():
         print(f"👤 Name: {data.get('First name')} {data.get('Last name')}")
         print(f"{'='*60}\n")
         
-        # Use the fixed rotating proxy
-        print(f"🌐 Using rotating proxy: {ROTATING_PROXY}")
+        # Generate a random proxy with port between 10000-20000
+        proxy = get_random_proxy()
+        print(f"🌐 Using rotating proxy: {proxy}")
         
         try:
             # Initialize browser with rotating proxy
             aeroplan_number = None
-            with SB(uc=True, proxy=ROTATING_PROXY) as sb:
+            with SB(uc=True, proxy=proxy) as sb:
                 aeroplan_number = fill_form(sb, data)
             
             # Save to processed CSV with Aeroplan number
