@@ -120,9 +120,7 @@ def fill_form(sb, data):
     sb.js_click('input[formcontrolname="city"]', scroll=True, timeout=15)
     sb.type('input[formcontrolname="city"]', data.get("City"), timeout=15)
 
-    # Fill postal code
-    sb.js_click('input[formcontrolname="zip"]', scroll=True, timeout=15)
-    sb.type('input[formcontrolname="zip"]', data.get("Postal Code"), timeout=15)
+
 
     # Select country
     sb.js_click('mat-select[formcontrolname="country"]', scroll=True, timeout=15)
@@ -132,7 +130,10 @@ def fill_form(sb, data):
     # Select province/state
     sb.js_click('mat-select[formcontrolname="state"]', scroll=True, timeout=15)
     sb.js_click(f"//mat-option//span[text()=' {data.get("Province")} ']", by="xpath", timeout=15)
-
+    
+    # Fill postal code
+    sb.js_click('input[formcontrolname="zip"]', scroll=True, timeout=15)
+    sb.type('input[formcontrolname="zip"]', data.get("Postal Code"), timeout=15)
     # Fill phone number
     sb.js_click('input[formcontrolname="phoneNumber"]', scroll=True, timeout=15)
     sb.type('input[formcontrolname="phoneNumber"]', data.get("Phone number"), timeout=15)
