@@ -48,16 +48,8 @@ def save_processed_entry(processed_file, row_data):
         writer.writerow(row_data)
 
 
-def format_proxy(proxy_string):
-    """Convert proxy format from IP:PORT:USERNAME:PASSWORD to USERNAME:PASSWORD@IP:PORT"""
-    if not proxy_string or not proxy_string.strip():
-        return None
-    
-    parts = proxy_string.strip().split(':')
-    if len(parts) == 4:
-        ip, port, username, password = parts
-        return f"{username}:{password}@{ip}:{port}"
-    return None
+# Fixed rotating proxy - no need to read from CSV
+ROTATING_PROXY = "e955120e5c61b9eb64e9__cr.ca:27e87286655e11fe@gw.dataimpulse.com:823"
 
 
 def fill_form(sb, data):
@@ -80,7 +72,7 @@ def fill_form(sb, data):
     sb.js_click('input[id="checkBox-input"]', timeout=15)
 
     # Click continue button
-    sb.click("#abcButtonElement1", timeout=15)
+    sb.js_click("button[data-analytics-val*='continue']", timeout=15)
     time.sleep(5)
 
     # Fill first name
@@ -114,9 +106,11 @@ def fill_form(sb, data):
 
     time.sleep(2)
 
-    # Click next button
-    sb.click("#acButtonElement171", timeout=15)
+
+        # Click next button
+    sb.js_click("button[data-analytics-val*='continue']", timeout=5)
     time.sleep(5)
+
 
     # Fill address
     sb.js_click('input[formcontrolname="addressLine1"]', scroll=True, timeout=15)
@@ -151,7 +145,7 @@ def fill_form(sb, data):
     input("Press Enter after solving the CAPTCHA to submit the form...")
 
     # Submit form
-    sb.js_click('#acButtonElement221', timeout=15)
+    sb.js_click('button[data-analytics-val*="create my account"]', scroll=True,timeout=15)
 
     input()
     time.sleep(5)
@@ -190,21 +184,13 @@ def main():
         print(f"👤 Name: {data.get('First name')} {data.get('Last name')}")
         print(f"{'='*60}\n")
         
-        # Format proxy
-        proxy = format_proxy(data.get('Proxy'))
-        if proxy:
-            print(f"🌐 Using proxy: {proxy}")
-        else:
-            print("⚠️  No proxy configured for this entry")
+        # Use the fixed rotating proxy
+        print(f"🌐 Using rotating proxy: {ROTATING_PROXY}")
         
         try:
-            # Initialize browser with proxy if available
-            if proxy:
-                with SB(uc=True, proxy=proxy) as sb:
-                    fill_form(sb, data)
-            else:
-                with SB(uc=True) as sb:
-                    fill_form(sb, data)
+            # Initialize browser with rotating proxy
+            with SB(uc=True, proxy=ROTATING_PROXY) as sb:
+                fill_form(sb, data)
             
             # Save to processed CSV
             save_processed_entry(processed_csv, data)
