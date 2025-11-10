@@ -3,7 +3,7 @@ import csv
 import time
 import os
 from datetime import datetime
-
+import re
 
 def read_csv(file_path):
     """Read CSV file and return list of dictionaries"""
@@ -31,26 +31,37 @@ def get_processed_emails(processed_file):
     return processed_emails
 
 
-def save_processed_entry(processed_file, row_data):
+def save_processed_entry(processed_file, row_data, aeroplan_number=None):
     """Save processed entry to CSV file"""
     file_exists = os.path.exists(processed_file)
     
     with open(processed_file, 'a', encoding='utf-8', newline='') as file:
-        fieldnames = list(row_data.keys()) + ['Processed_Date']
+        # Include Aeroplan number in fieldnames if not already there
+        fieldnames = list(row_data.keys())
+        if 'Processed_Date' not in fieldnames:
+            fieldnames.append('Processed_Date')
+        if 'Aeroplan number' not in fieldnames:
+            fieldnames.append('Aeroplan number')
+            
         writer = csv.DictWriter(file, fieldnames=fieldnames)
         
         # Write header if file doesn't exist
         if not file_exists:
             writer.writeheader()
         
-        # Add timestamp
+        # Add timestamp and aeroplan number
         row_data['Processed_Date'] = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        if aeroplan_number:
+            row_data['Aeroplan number'] = aeroplan_number
+        else:
+            row_data['Aeroplan number'] = 'Failed to extract'
+            
         writer.writerow(row_data)
 
 
 # Fixed rotating proxy - no need to read from CSV
-ROTATING_PROXY = "e955120e5c61b9eb64e9__cr.ca:27e87286655e11fe@gw.dataimpulse.com:823"
-
+#ROTATING_PROXY = "e955120e5c61b9eb64e9__cr.ca:27e87286655e11fe@gw.dataimpulse.com:823"
+ROTATING_PROXY = "LV23106126-IqS4nHKett-33:3a2bcxb537@174.138.175.186:7383"
 
 def fill_form(sb, data):
     """Fill the form with data from CSV row"""
@@ -130,7 +141,7 @@ def fill_form(sb, data):
     # Select province/state
     sb.js_click('mat-select[formcontrolname="state"]', scroll=True, timeout=15)
     sb.js_click(f"//mat-option//span[text()=' {data.get("Province")} ']", by="xpath", timeout=15)
-    
+
     # Fill postal code
     sb.js_click('input[formcontrolname="zip"]', scroll=True, timeout=15)
     sb.type('input[formcontrolname="zip"]', data.get("Postal Code"), timeout=15)
@@ -148,8 +159,15 @@ def fill_form(sb, data):
     # Submit form
     sb.js_click('button[data-analytics-val*="create my account"]', scroll=True,timeout=15)
 
-    input()
     time.sleep(5)
+    try:
+        number_text = sb.get_text("span.aeroplan-number")
+        aeroplan_number = re.sub(r"\D", "", number_text)
+        print(f"\n🎉 Aeroplan Number Extracted: {aeroplan_number}")
+        return aeroplan_number
+    except Exception as e:
+        print(f"❌ Could not extract Aeroplan Number: {str(e)}")
+        return None
 
 
 def main():
@@ -190,12 +208,18 @@ def main():
         
         try:
             # Initialize browser with rotating proxy
+            aeroplan_number = None
             with SB(uc=True, proxy=ROTATING_PROXY) as sb:
-                fill_form(sb, data)
+                aeroplan_number = fill_form(sb, data)
             
-            # Save to processed CSV
-            save_processed_entry(processed_csv, data)
-            print(f"✅ Successfully processed and saved: {email}\n")
+            # Save to processed CSV with Aeroplan number
+            save_processed_entry(processed_csv, data, aeroplan_number)
+            
+            if aeroplan_number:
+                print(f"✅ Successfully processed and saved: {email}")
+                print(f"✈️  Aeroplan Number: {aeroplan_number}\n")
+            else:
+                print(f"⚠️  Processed but could not extract Aeroplan number: {email}\n")
             
         except Exception as e:
             print(f"❌ Error processing {email}: {str(e)}")
