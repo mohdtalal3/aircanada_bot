@@ -119,58 +119,68 @@ class WorkerThread(QThread):
         try:
             self.log("Opening registration page...", "info")
             sb.open("https://www.aircanada.com/aeroplan/member/enrolment")
-            time.sleep(3)
+            time.sleep(random.uniform(1, 3))
             
             # Fill email
             self.log("Filling email...", "info")
             sb.js_click("#emailFocus", scroll=True, timeout=15)
             sb.type("#emailFocus", data.get("Email"))
+            time.sleep(random.uniform(1, 3))
 
             # Fill password
             sb.js_click("#pwd", scroll=True, timeout=15)
             sb.type("#pwd", data.get("Password"))
+            time.sleep(random.uniform(1, 3))
 
             # Click checkbox
             sb.js_click('input[id="checkBox-input"]', timeout=15)
+            time.sleep(random.uniform(1, 3))
 
             # Click continue button
             self.log("Submitting credentials...", "info")
             sb.js_click("button[data-analytics-val*='continue']", timeout=15)
-            time.sleep(5)
+            time.sleep(random.uniform(2, 4))
 
             # Fill personal details
             self.log("Filling personal details...", "info")
             sb.js_click("input[name='firstName']", scroll=True, timeout=15)
             sb.type("input[name='firstName']", data.get("First name"))
+            time.sleep(random.uniform(1, 3))
 
             sb.js_click("input[name='lastName']", scroll=True, timeout=15)
             sb.type("input[name='lastName']", data.get("Last name"))
+            time.sleep(random.uniform(1, 3))
 
             # Select gender
             sb.js_click('mat-select[formcontrolname="gender"]', scroll=True, timeout=15)
+            time.sleep(random.uniform(1, 2))
             if data.get("Gender") == "Male":
                 sb.js_click("//mat-option//span[text()=' Male ']", by="xpath", timeout=15)
             else:
                 sb.js_click("//mat-option//span[text()=' Female ']", by="xpath", timeout=15)
-            time.sleep(2)
+            time.sleep(random.uniform(1, 3))
 
             # Select birthday
             self.log("Selecting birth date...", "info")
             sb.js_click("mat-select[formcontrolname='d']", scroll=True, timeout=15)
+            time.sleep(random.uniform(1, 2))
             element = sb.find_element(f'//mat-option//span[normalize-space(text())="{data.get("Day")}"]', by="xpath", timeout=15)
             sb.execute_script("arguments[0].click();", element)
+            time.sleep(random.uniform(1, 3))
 
             sb.js_click("mat-select[formcontrolname='m']", scroll=True, timeout=15)
+            time.sleep(random.uniform(1, 2))
             sb.js_click(f"//mat-option//span[text()=' {data.get("Month")} ']", by="xpath", timeout=15)
+            time.sleep(random.uniform(1, 3))
 
             sb.js_click("mat-select[formcontrolname='y']", scroll=True, timeout=15)
+            time.sleep(random.uniform(1, 2))
             sb.js_click(f"//mat-option//span[text()=' {data.get("Year")} ']", by="xpath", timeout=15)
-
-            time.sleep(2)
+            time.sleep(random.uniform(1, 3))
 
             # Click next button
             sb.js_click("button[data-analytics-val*='continue']", timeout=5)
-            time.sleep(5)
+            time.sleep(random.uniform(2, 4))
             
             # Wait for CAPTCHA
             self.log("⚠️ Waiting for CAPTCHA to be solved...", "warning")
@@ -179,40 +189,49 @@ class WorkerThread(QThread):
             sb.wait_for_element_present('span.recaptcha-checkbox[aria-checked="true"]', timeout=300)
             sb.switch_to_default_content()
             self.log("✓ CAPTCHA solved!", "success")
+            time.sleep(random.uniform(1, 3))
             
             # Fill address
             self.log("Filling address details...", "info")
             sb.js_click('input[formcontrolname="addressLine1"]', scroll=True, timeout=15)
             sb.type('input[formcontrolname="addressLine1"]', data.get("Address"), timeout=15)
+            time.sleep(random.uniform(1, 3))
 
             sb.js_click('input[formcontrolname="city"]', scroll=True, timeout=15)
             sb.type('input[formcontrolname="city"]', data.get("City"), timeout=15)
+            time.sleep(random.uniform(1, 3))
 
             # Select country
             sb.js_click('mat-select[formcontrolname="country"]', scroll=True, timeout=15)
+            time.sleep(random.uniform(1, 2))
             sb.js_click(f"//mat-option//span[text()=' {data.get("Country")} ']", by="xpath", timeout=15)
-            time.sleep(2)
+            time.sleep(random.uniform(1, 3))
 
             # Select province/state
             sb.js_click('mat-select[formcontrolname="state"]', scroll=True, timeout=15)
+            time.sleep(random.uniform(1, 2))
             sb.js_click(f"//mat-option//span[text()=' {data.get("Province")} ']", by="xpath", timeout=15)
+            time.sleep(random.uniform(1, 3))
 
             # Fill postal code
             sb.js_click('input[formcontrolname="zip"]', scroll=True, timeout=15)
             sb.type('input[formcontrolname="zip"]', data.get("Postal Code"), timeout=15)
+            time.sleep(random.uniform(1, 3))
             
             # Fill phone number
             sb.js_click('input[formcontrolname="phoneNumber"]', scroll=True, timeout=15)
             sb.type('input[formcontrolname="phoneNumber"]', data.get("Phone number"), timeout=15)
+            time.sleep(random.uniform(1, 3))
 
             # Click privacy policy checkbox
             sb.js_click('input[id="privacyPolicycheckBox"]', scroll=True, timeout=15)
+            time.sleep(random.uniform(1, 3))
 
             # Submit form
             self.log("Submitting registration form...", "info")
             sb.js_click('button[data-analytics-val*="create my account"]', scroll=True, timeout=15)
             
-            time.sleep(5)
+            time.sleep(random.uniform(3, 5))
             
             # Extract Aeroplan number
             try:
@@ -221,31 +240,37 @@ class WorkerThread(QThread):
                 number_text = sb.get_text("span.aeroplan-number")
                 aeroplan_number = re.sub(r"\D", "", number_text)
                 self.log(f"🎉 Aeroplan Number: {aeroplan_number}", "success")
+                time.sleep(random.uniform(1, 3))
                 
                 if aeroplan_number:
                     self.log("🎭 Starting Disney promotion registration...", "info")
                     sb.open("https://www.aircanada.com/ca/en/aco/home/book/special-offers/disney-promotion.html")
                     self.log("✓ Opened Disney promotion page", "success")
+                    time.sleep(random.uniform(2, 4))
 
                     self.log("Waiting for Disney form to load...", "info")
                     sb.wait_for_element_present('input[name="ae-number"]', timeout=300)
+                    time.sleep(random.uniform(1, 3))
                     
                     self.log("Entering Aeroplan number in Disney form...", "info")
                     sb.js_click('input[name="ae-number"]', scroll=True, timeout=15)
                     sb.type('input[name="ae-number"]', aeroplan_number, timeout=15)
                     self.log(f"✓ Entered Aeroplan number: {aeroplan_number}", "success")
+                    time.sleep(random.uniform(1, 3))
 
                     self.log("Accepting agreement terms...", "info")
                     sb.js_click('input[name="agreement"]', scroll=True, timeout=15)
                     self.log("✓ Agreement checkbox checked", "success")
+                    time.sleep(random.uniform(1, 3))
 
                     self.log("Checking profile confirmation...", "info")
                     sb.js_click('input[name="profilecheck"]', scroll=True, timeout=15)
                     self.log("✓ Profile check completed", "success")
+                    time.sleep(random.uniform(1, 3))
 
                     self.log("Submitting Disney promotion form...", "info")
                     sb.js_click('input[type="submit"]', scroll=True, timeout=15)
-                    time.sleep(7)
+                    time.sleep(random.uniform(3, 5))
                     self.log("🎉 Disney promotion registration completed!", "success")
                 return aeroplan_number
             except Exception as e:
