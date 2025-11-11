@@ -19,11 +19,10 @@ class WorkerThread(QThread):
     progress_signal = pyqtSignal(int, int)  # current, total
     finished_signal = pyqtSignal()
     
-    def __init__(self, csv_file, processed_file, proxy_base):
+    def __init__(self, csv_file, processed_file):
         super().__init__()
         self.csv_file = csv_file
         self.processed_file = processed_file
-        self.proxy_base = proxy_base
         self.is_running = True
         self.extension_dir = os.path.join(os.getcwd(), 'extension')
         
@@ -104,10 +103,16 @@ class WorkerThread(QThread):
         except Exception as e:
             self.log(f"✗ Failed to remove row from CSV: {str(e)}", "error")
     
-    def get_random_proxy(self):
-        """Generate proxy with random port between 10000 and 20000"""
-        random_port = random.randint(10000, 20000)
-        return f"{self.proxy_base}:{random_port}"
+    def format_proxy(self, proxy_string):
+        """Convert proxy format from IP:PORT:USERNAME:PASSWORD to USERNAME:PASSWORD@IP:PORT"""
+        if not proxy_string or not proxy_string.strip():
+            return None
+        
+        parts = proxy_string.strip().split(':')
+        if len(parts) == 4:
+            ip, port, username, password = parts
+            return f"{username}:{password}@{ip}:{port}"
+        return proxy_string  # Return as-is if already in correct format
     
     def fill_form(self, sb, data):
         """Fill the form with data from CSV row"""
@@ -292,9 +297,20 @@ class WorkerThread(QThread):
                 # Update progress
                 self.progress_signal.emit(index, len(remaining_data))
                 
-                # Generate random proxy
-                proxy = self.get_random_proxy()
-                self.log(f"🌐 Using proxy: {proxy}", "info")
+                # Get proxy from CSV and format it
+                proxy_raw = data.get('Proxy', '').strip()
+                if proxy_raw:
+                    proxy = self.format_proxy(proxy_raw)
+                    if proxy:
+                        self.log(f"🌐 Using proxy from CSV: {proxy}", "info")
+                    else:
+                        self.log(f"⚠️ Invalid proxy format in CSV: {proxy_raw}", "warning")
+                        self.log("Skipping this entry...", "warning")
+                        continue
+                else:
+                    self.log(f"⚠️ No proxy found in CSV for {email}", "warning")
+                    self.log("Skipping this entry...", "warning")
+                    continue
                 
                 try:
                     # Initialize browser with proxy
@@ -306,7 +322,8 @@ class WorkerThread(QThread):
                         browser_args["extension_dir"] = self.extension_dir
                     
                     # Check for custom Chrome binary
-                    chrome_binary = "chrome-mac-arm64/Google Chrome for Testing.app/Contents/MacOS/Google Chrome for Testing"
+                    #chrome_binary = "chrome-mac-arm64/Google Chrome for Testing.app/Contents/MacOS/Google Chrome for Testing"
+                    chrome_binary = "chrome-win64\\chrome.exe"
                     if os.path.exists(chrome_binary):
                         browser_args["binary_location"] = chrome_binary
                     
@@ -346,7 +363,6 @@ class MainWindow(QMainWindow):
         self.worker = None
         self.csv_file = None
         self.processed_file = "processed_data.csv"
-        self.proxy_base = "e955120e5c61b9eb64e9__cr.us:27e87286655e11fe@gw.dataimpulse.com"
         
         self.init_ui()
         
@@ -378,7 +394,7 @@ class MainWindow(QMainWindow):
         
         # CSV File Selection
         csv_layout = QHBoxLayout()
-        self.csv_label = QLabel("No CSV file selected")
+        self.csv_label = QLabel("No CSV file selected (must include Proxy column)")
         self.csv_label.setStyleSheet("color: gray; padding: 5px;")
         csv_browse_btn = QPushButton("📁 Browse CSV File")
         csv_browse_btn.clicked.connect(self.browse_csv_file)
@@ -386,13 +402,10 @@ class MainWindow(QMainWindow):
         csv_layout.addWidget(csv_browse_btn, 1)
         config_layout.addLayout(csv_layout)
         
-        # Proxy Configuration
-        proxy_layout = QHBoxLayout()
-        proxy_layout.addWidget(QLabel("Proxy Base:"))
-        self.proxy_input = QLineEdit(self.proxy_base)
-        self.proxy_input.setPlaceholderText("username:password@host")
-        proxy_layout.addWidget(self.proxy_input)
-        config_layout.addLayout(proxy_layout)
+        # Info label about proxy
+        proxy_info = QLabel("ℹ️ Proxies will be read from the 'Proxy' column in your CSV file")
+        proxy_info.setStyleSheet("color: #FFC107; padding: 5px; font-style: italic;")
+        config_layout.addWidget(proxy_info)
         
         config_group.setLayout(config_layout)
         main_layout.addWidget(config_group)
@@ -467,12 +480,22 @@ class MainWindow(QMainWindow):
             self.start_btn.setEnabled(True)
             self.add_log(f"CSV file selected: {file_name}", "success")
             
-            # Count entries
+            # Count entries and check for Proxy column
             try:
                 with open(file_name, 'r', encoding='utf-8-sig') as f:
                     reader = csv.DictReader(f)
+                    fieldnames = reader.fieldnames
+                    
+                    # Check if Proxy column exists
+                    if 'Proxy' not in fieldnames:
+                        self.add_log("⚠️ Warning: 'Proxy' column not found in CSV!", "warning")
+                        self.add_log("Please make sure your CSV has a 'Proxy' column with proxy data", "warning")
+                        self.start_btn.setEnabled(False)
+                        return
+                    
                     count = sum(1 for row in reader if row.get('Email', '').strip())
-                self.add_log(f"Found {count} entries in the CSV file", "info")
+                    self.add_log(f"Found {count} entries in the CSV file", "info")
+                    self.add_log("✓ 'Proxy' column detected in CSV", "success")
             except Exception as e:
                 self.add_log(f"Error reading CSV: {str(e)}", "error")
     
@@ -482,25 +505,18 @@ class MainWindow(QMainWindow):
             self.add_log("Please select a CSV file first!", "error")
             return
         
-        # Update proxy base from input
-        self.proxy_base = self.proxy_input.text().strip()
-        
-        if not self.proxy_base:
-            self.add_log("Please enter proxy configuration!", "error")
-            return
-        
         # Disable start button, enable stop button
         self.start_btn.setEnabled(False)
         self.stop_btn.setEnabled(True)
         self.csv_label.setEnabled(False)
-        self.proxy_input.setEnabled(False)
         
         self.add_log("\n" + "=" * 60, "info")
         self.add_log("Starting processing...", "info")
+        self.add_log("Proxies will be read from CSV 'Proxy' column", "info")
         self.add_log("=" * 60 + "\n", "info")
         
         # Create and start worker thread
-        self.worker = WorkerThread(self.csv_file, self.processed_file, self.proxy_base)
+        self.worker = WorkerThread(self.csv_file, self.processed_file)
         self.worker.log_signal.connect(self.add_log)
         self.worker.progress_signal.connect(self.update_progress)
         self.worker.finished_signal.connect(self.processing_finished)
@@ -520,7 +536,6 @@ class MainWindow(QMainWindow):
         self.start_btn.setEnabled(True)
         self.stop_btn.setEnabled(False)
         self.csv_label.setEnabled(True)
-        self.proxy_input.setEnabled(True)
         self.statusBar().showMessage("Ready")
         self.add_log("\n✅ Processing completed!", "success")
     
