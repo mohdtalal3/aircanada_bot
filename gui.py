@@ -123,7 +123,7 @@ class WorkerThread(QThread):
             
             # Fill email
             self.log("Filling email...", "info")
-            sb.js_click("#emailFocus", scroll=True, timeout=15)
+            sb.js_click("#emailFocus", scroll=True, timeout=30)
             sb.type("#emailFocus", data.get("Email"))
             time.sleep(random.uniform(1, 3))
 
@@ -347,8 +347,8 @@ class WorkerThread(QThread):
                         browser_args["extension_dir"] = self.extension_dir
                     
                     # Check for custom Chrome binary
-                    #chrome_binary = "chrome-mac-arm64/Google Chrome for Testing.app/Contents/MacOS/Google Chrome for Testing"
-                    chrome_binary = "chrome-win64\\chrome.exe"
+                    chrome_binary = "chrome-mac-arm64/Google Chrome for Testing.app/Contents/MacOS/Google Chrome for Testing"
+                    #chrome_binary = "chrome-win64\\chrome.exe"
                     if os.path.exists(chrome_binary):
                         browser_args["binary_location"] = chrome_binary
                     
