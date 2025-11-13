@@ -117,13 +117,14 @@ class WorkerThread(QThread):
     def fill_form(self, sb, data):
         """Fill the form with data from CSV row"""
         try:
+            sb.maximize_window()
             self.log("Opening registration page...", "info")
             sb.open("https://www.aircanada.com/aeroplan/member/enrolment")
             time.sleep(random.uniform(1, 3))
             
             # Fill email
             self.log("Filling email...", "info")
-            sb.js_click("#emailFocus", scroll=True, timeout=30)
+            sb.js_click("#emailFocus", scroll=True, timeout=60)
             sb.type("#emailFocus", data.get("Email"))
             time.sleep(random.uniform(1, 3))
 
@@ -164,8 +165,7 @@ class WorkerThread(QThread):
             self.log("Selecting birth date...", "info")
             sb.js_click("mat-select[formcontrolname='d']", scroll=True, timeout=15)
             time.sleep(random.uniform(1, 2))
-            element = sb.find_element(f'//mat-option//span[normalize-space(text())="{data.get("Day")}"]', by="xpath", timeout=15)
-            sb.execute_script("arguments[0].click();", element)
+            sb.js_click(f"//mat-option//span[text()=' {data.get("Day")} ']", by="xpath", timeout=15)
             time.sleep(random.uniform(1, 3))
 
             sb.js_click("mat-select[formcontrolname='m']", scroll=True, timeout=15)
@@ -347,8 +347,8 @@ class WorkerThread(QThread):
                         browser_args["extension_dir"] = self.extension_dir
                     
                     # Check for custom Chrome binary
-                    chrome_binary = "chrome-mac-arm64/Google Chrome for Testing.app/Contents/MacOS/Google Chrome for Testing"
-                    #chrome_binary = "chrome-win64\\chrome.exe"
+                    #chrome_binary = "chrome-mac-arm64/Google Chrome for Testing.app/Contents/MacOS/Google Chrome for Testing"
+                    chrome_binary = "chrome-win64\\chrome.exe"
                     if os.path.exists(chrome_binary):
                         browser_args["binary_location"] = chrome_binary
                     
